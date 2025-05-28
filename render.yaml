@@ -1,0 +1,6 @@
+services:
+  - type: web
+    name: verificar-dpi
+    env: python
+    buildCommand: ""
+    startCommand: "python api_dpi.py"
