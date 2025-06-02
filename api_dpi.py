@@ -3,7 +3,7 @@ from flask_cors import CORS
 from PIL import Image
 
 app = Flask(__name__)
-CORS(app)  # Libera acesso para qualquer domínio (você pode restringir depois)
+CORS(app)  # Libera acesso para qualquer domínio (ajuste se necessário)
 
 @app.route("/verificar-dpi", methods=["POST"])
 def verificar_dpi():
@@ -13,14 +13,24 @@ def verificar_dpi():
     file = request.files['arquivo']
     try:
         img = Image.open(file.stream)
+        width, height = img.size
         dpi = img.info.get('dpi', (0, 0))
         dpi_x, dpi_y = dpi if isinstance(dpi, tuple) else (dpi, dpi)
+
+        # Se o DPI estiver ausente ou zero, estimar com base no tamanho da imagem e A4
+        if dpi_x == 0 or dpi_y == 0:
+            est_dpi_x = round(width / 8.27)
+            est_dpi_y = round(height / 11.69)
+            dpi_x, dpi_y = est_dpi_x, est_dpi_y
 
         return jsonify({
             "ok": dpi_x >= 200 and dpi_y >= 200,
             "dpi_x": dpi_x,
-            "dpi_y": dpi_y
+            "dpi_y": dpi_y,
+            "largura": width,
+            "altura": height
         })
+
     except Exception as e:
         return jsonify({"ok": False, "erro": str(e)}), 500
 
