@@ -29,13 +29,18 @@ def verificar_dpi():
         dpi = img.info.get('dpi', (0, 0))
         dpi_x, dpi_y = dpi if isinstance(dpi, tuple) else (dpi, dpi)
 
+        # Se DPI estiver ausente, estimar
         if dpi_x == 0 or dpi_y == 0:
             est_dpi_x = round(width / 8.27)
             est_dpi_y = round(height / 11.69)
             dpi_x, dpi_y = est_dpi_x, est_dpi_y
 
+        # Validação por DPI OU por tamanho compatível com A4 300DPI
+        is_size_compatível = abs(width - 2480) <= 5 and abs(height - 3507) <= 5
+        aprovado = (dpi_x >= 200 and dpi_y >= 200) or is_size_compatível
+
         return jsonify({
-            "ok": dpi_x >= 200 and dpi_y >= 200,
+            "ok": aprovado,
             "dpi_x": dpi_x,
             "dpi_y": dpi_y,
             "largura": width,
