@@ -1,9 +1,10 @@
 from flask import Flask, request, jsonify
 from flask_cors import CORS
 from PIL import Image, UnidentifiedImageError
+import traceback
 
 app = Flask(__name__)
-CORS(app)  # Libera acesso de qualquer origem
+CORS(app)
 
 @app.route("/verificar-dpi", methods=["POST"])
 def verificar_dpi():
@@ -18,19 +19,16 @@ def verificar_dpi():
         }), 400
 
     file = request.files['arquivo']
-
     try:
-        # Abre e valida a imagem
         img = Image.open(file.stream)
-        img.verify()  # Valida integridade
-        file.stream.seek(0)  # Reposiciona para reabrir
-        img = Image.open(file.stream)  # Reabre para uso real
+        img.verify()
+        file.stream.seek(0)
+        img = Image.open(file.stream)
 
         width, height = img.size
         dpi = img.info.get('dpi', (0, 0))
         dpi_x, dpi_y = dpi if isinstance(dpi, tuple) else (dpi, dpi)
 
-        # Estimar DPI se estiver ausente
         if dpi_x == 0 or dpi_y == 0:
             est_dpi_x = round(width / 8.27)
             est_dpi_y = round(height / 11.69)
@@ -55,6 +53,7 @@ def verificar_dpi():
         }), 400
 
     except Exception as e:
+        print("ERRO INTERNO:", traceback.format_exc())
         return jsonify({
             "ok": False,
             "dpi_x": 0,
