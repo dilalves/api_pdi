@@ -3,25 +3,34 @@ from flask_cors import CORS
 from PIL import Image, UnidentifiedImageError
 
 app = Flask(__name__)
-CORS(app)  # Libera acesso para qualquer domínio (ajuste se necessário)
+CORS(app)  # Libera acesso de qualquer origem
 
 @app.route("/verificar-dpi", methods=["POST"])
 def verificar_dpi():
     if 'arquivo' not in request.files:
-        return jsonify({"ok": False, "erro": "Arquivo não enviado"}), 400
+        return jsonify({
+            "ok": False,
+            "dpi_x": 0,
+            "dpi_y": 0,
+            "largura": 0,
+            "altura": 0,
+            "erro": "Arquivo não enviado."
+        }), 400
 
     file = request.files['arquivo']
 
     try:
+        # Abre e valida a imagem
         img = Image.open(file.stream)
-        img.verify()  # Verifica se a imagem não está corrompida
-        img = Image.open(file.stream)  # Reabre para uso após .verify()
+        img.verify()  # Valida integridade
+        file.stream.seek(0)  # Reposiciona para reabrir
+        img = Image.open(file.stream)  # Reabre para uso real
 
         width, height = img.size
         dpi = img.info.get('dpi', (0, 0))
         dpi_x, dpi_y = dpi if isinstance(dpi, tuple) else (dpi, dpi)
 
-        # Estimar DPI se ausente
+        # Estimar DPI se estiver ausente
         if dpi_x == 0 or dpi_y == 0:
             est_dpi_x = round(width / 8.27)
             est_dpi_y = round(height / 11.69)
@@ -36,9 +45,24 @@ def verificar_dpi():
         })
 
     except UnidentifiedImageError:
-        return jsonify({"ok": False, "erro": "Arquivo não é uma imagem válida."}), 400
+        return jsonify({
+            "ok": False,
+            "dpi_x": 0,
+            "dpi_y": 0,
+            "largura": 0,
+            "altura": 0,
+            "erro": "Arquivo não é uma imagem válida."
+        }), 400
+
     except Exception as e:
-        return jsonify({"ok": False, "erro": "Erro interno: " + str(e)}), 500
+        return jsonify({
+            "ok": False,
+            "dpi_x": 0,
+            "dpi_y": 0,
+            "largura": 0,
+            "altura": 0,
+            "erro": "Erro interno: " + str(e)
+        }), 500
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=10000)
